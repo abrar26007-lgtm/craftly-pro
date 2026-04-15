@@ -1,1 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Craftly Production Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg:       #06090d;
+    --surface:  #0c1118;
+    --card:     #111820;
+    --border:   #1d2b38;
+    --border2:  #243345;
+    --green:    #00e676;
+    --green2:   #00c853;
+    --blue:     #29b6f6;
+    --amber:    #ffab00;
+    --red:      #ff5252;
+    --text:     #c8d8e8;
+    --muted:    #5a7080;
+    --mono:     'JetBrains Mono', monospace;
+    --sans:     'Syne', sans-serif;
+  }
 
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    line-height: 1.5;
+  }
+
+  /* Scanline overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,230,118,0.012) 2px,
+      rgba(0,230,118,0.012) 4px
+    );
+    pointer-events: none;
+    z-index: 999;
+  }
+
+  .shell {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 24px 16px 60px;
+  }
+
+  /* ── Header ── */
+  header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 32px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .logo-mark {
+    width: 44px; height: 44px;
+    background: linear-gradient(135deg, #00e676 0%, #00bfa5 100%);
+    border-radius: 10px;
+    display: grid;
+    place-items: center;
+    font-size: 22px;
+    flex-shrink: 0;
+    box-shadow: 0 0 20px rgba(0,230,118,0.3);
+  }
+  .header-text h1 {
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: -0.3px;
+    color: #fff;
+  }
+  .header-text p {
+    font-size: 12px;
+    color: var(--muted);
+    font-family: var(--mono);
+    margin-top: 2px;
+  }
+  .status-pill {
+    margin-left: auto;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    background: rgba(90,112,128,0.15);
+    border: 1px solid var(--border2);
+    color: var(--muted);
+    transition: all .3s;
+  }
+  .status-pill.running {
+    background: rgba(0,230,118,0.1);
+    border-color: rgba(0,230,118,0.4);
+    color: var(--green);
+    animation: pulse-border 2s infinite;
+  }
+  .status-pill.done {
+    background: rgba(41,182,246,0.1);
+    border-color: rgba(41,182,246,0.4);
+    color: var(--blue);
+  }
+  .status-pill.error {
+    background: rgba(255,82,82,0.1);
+    border-color: rgba(255,82,82,0.4);
+    color: var(--red);
+  }
+  @keyframes pulse-border {
+    0%,100% { box-shadow: 0 0 0 0 rgba(0,230,118,0.4); }
+    50%      { box-shadow: 0 0 0 4px rgba(0,230,118,0); }
+  }
+
+  /* ── Section ── */
+  .section {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  .section-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 14px;
+  }
+
+  /* ── Inputs ── */
+  .input-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+  .input-group:last-child { margin-bottom: 0; }
+  label { font-size: 12px; color: var(--muted); font-family: var(--mono); }
+
+  input[type=text],
+  input[type=password],
+  input[type=number],
+  select,
+  textarea {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    padding: 10px 14px;
+    outline: none;
+    width: 100%;
+    transition: border-color .2s, box-shadow .2s;
+    -webkit-appearance: none;
+  }
+  input:focus, select:focus, textarea:focus {
+    border-color: rgba(0,230,118,0.5);
+    box-shadow: 0 0 0 3px rgba(0,230,118,0.08);
+  }
+  select option { background: var(--surface); }
+  textarea { resize: vertical; min-height: 100px; line-height: 1.6; }
+
+  .key-row { position: relative; }
+  .key-row input { padding-right: 44px; }
+  .eye-btn {
+    position: absolute;
+    right: 12px; top: 50%;
+    transform: translateY(-50%);
+    background: none; border: none;
+    color: var(--muted); cursor: pointer;
+    font-size: 16px; padding: 2px;
+    transition: color .2s;
+  }
+  .eye-btn:hover { color: var(--text); }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+
+  /* File upload */
+  .file-upload-area {
+    border: 1px dashed var(--border2);
+    border-radius: 8px;
+    padding: 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: all .2s;
+    background: var(--surface);
+  }
+  .file-upload-area:hover {
+    border-color: rgba(0,230,118,0.4);
+    background: rgba(0,230,118,0.03);
+  }
+  .file-upload-area.has-file {
+    border-color: rgba(0,230,118,0.5);
+    background: rgba(0,230,118,0.05);
+  }
+  .file-upload-area p { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .file-upload-area .file-name {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--green);
+    margin-top: 4px;
+  }
+  #fileInput { display: none; }
+
+  /* ── Buttons ── */
+  .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 0; }
+  .btn {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    cursor: pointer;
+    border: none;
+    transition: all .15s;
+    white-space: nowrap;
+  }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-primary {
+    background: var(--green2);
+    color: #000;
+    box-shadow: 0 4px 14px rgba(0,200,83,0.35);
+  }
+  .btn-primary:hover:not(:disabled) {
+    background: var(--green);
+    box-shadow: 0 4px 20px rgba(0,230,118,0.5);
+    transform: translateY(-1px);
+  }
+  .btn-stop {
+    background: rgba(255,82,82,0.12);
+    border: 1px solid rgba(255,82,82,0.4);
+    color: var(--red);
+  }
+  .btn-stop:hover:not(:disabled) {
+    background: rgba(255,82,82,0.2);
+  }
+  .btn-download {
+    background: rgba(41,182,246,0.12);
+    border: 1px solid rgba(41,182,246,0.35);
+    color: var(--blue);
+  }
+  .btn-download:hover:not(:disabled) {
+    background: rgba(41,182,246,0.22);
+  }
+  .btn-reset {
+    background: rgba(90,112,128,0.12);
+    border: 1px solid var(--border2);
+    color: var(--muted);
+  }
+  .btn-reset:hover:not(:disabled) {
+    background: rgba(90,112,128,0.2);
+    color: var(--text);
+  }
+
+  /* ── Progress ── */
+  .progress-wrap { margin: 18px 0 14px; }
+  .progress-bar-bg {
+    height: 6px;
+    background: var(--surface);
+    border-radius: 999px;
+    overflow: hidden;
+    margin-bottom: 8px;
+    border: 1px solid var(--border);
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--green2), var(--green));
+    border-radius: 999px;
+    transition: width .4s ease;
+    width: 0%;
+    box-shadow: 0 0 8px rgba(0,230,118,0.6);
+  }
+  .progress-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    display: flex;
+    justify-content: space-between;
+  }
+
+  /* ── Stats ── */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin: 14px 0;
+  }
+  @media (max-width: 500px) {
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .grid-2, .grid-3 { grid-template-columns: 1fr; }
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px;
+    text-align: center;
+  }
+  .stat-val {
+    font-family: var(--mono);
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 1.1;
+    color: #fff;
+  }
+  .stat-val.green { color: var(--green); }
+  .stat-val.red   { color: var(--red); }
+  .stat-val.amber { color: var(--amber); }
+  .stat-val.blue  { color: var(--blue); }
+  .stat-key {
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-family: var(--mono);
+    margin-top: 4px;
+  }
+
+  /* ── Log ── */
+  .log-box {
+    background: #040609;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    height: 240px;
+    overflow-y: auto;
+    padding: 12px;
+    font-family: var(--mono);
+    font-size: 11px;
+    line-height: 1.7;
+    color: #8aa0b0;
+    scroll-behavior: smooth;
+  }
+  .log-box::-webkit-scrollbar { width: 4px; }
+  .log-box::-webkit-scrollbar-track { background: transparent; }
+  .log-box::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  .log-line { padding: 1px 0; }
+  .log-line.ok   { color: var(--green); }
+  .log-line.err  { color: var(--red); }
+  .log-line.wait { color: var(--amber); }
+  .log-line.info { color: var(--blue); }
+  .log-empty { color: var(--muted); text-align: center; padding: 20px 0; }
+
+  /* ── Failed indices ── */
+  .failed-box {
+    background: rgba(255,82,82,0.05);
+    border: 1px solid rgba(255,82,82,0.2);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--red);
+    margin-top: 10px;
+    display: none;
+    word-break: break-all;
+    line-height: 1.8;
+  }
+
+  /* ── Tip ── */
+  .tip {
+    font-size: 11px;
+    color: var(--muted);
+    font-family: var(--mono);
+    margin-top: 8px;
+    padding: 8px 12px;
+    background: rgba(255,171,0,0.05);
+    border: 1px solid rgba(255,171,0,0.15);
+    border-radius: 6px;
+  }
+  .tip::before { content: '⚠ '; color: var(--amber); }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- Header -->
+  <header>
+    <div class="logo-mark">🚀</div>
+    <div class="header-text">
+      <h1>Craftly Production Dashboard</h1>
+      <p>batch.json generator // anthropic api</p>
+    </div>
+    <div class="status-pill" id="statusPill">IDLE</div>
+  </header>
+
+  <!-- API Key -->
+  <div class="section">
+    <div class="section-label">Anthropic API Key</div>
+    <div class="input-group">
+      <div class="key-row">
+        <input type="password" id="apiKey" placeholder="sk-ant-api03-..." autocomplete="off"/>
+        <button class="eye-btn" id="eyeBtn" onclick="toggleKey()" title="Show/hide key">👁</button>
+      </div>
+      <label>Key stays in your browser — never stored on server beyond the active job</label>
+    </div>
+  </div>
+
+  <!-- Model + Settings -->
+  <div class="section">
+    <div class="section-label">Model & Generation Settings</div>
+    <div class="grid-2">
+      <div class="input-group">
+        <label>Model</label>
+        <select id="model">
+          <option value="claude-sonnet-4-20250514">Claude Sonnet 4 (Recommended)</option>
+          <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5 (Fastest)</option>
+          <option value="claude-opus-4-6">Claude Opus 4.6 (Highest quality)</option>
+        </select>
+      </div>
+      <div class="input-group">
+        <label>Total Batches</label>
+        <input type="number" id="totalBatches" value="50" min="1" max="1000"/>
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="input-group">
+        <label>Concurrency (parallel requests)</label>
+        <input type="number" id="concurrency" value="2" min="1" max="5"/>
+      </div>
+    </div>
+    <div class="tip">Concurrency 2 is optimal. Higher = faster but more 429 rate limit errors. Retries are automatic with backoff.</div>
+  </div>
+
+  <!-- Prompt -->
+  <div class="section">
+    <div class="section-label">Prompt</div>
+    <div class="input-group">
+      <label>Upload prompt.md / .txt file</label>
+      <div class="file-upload-area" id="dropZone" onclick="document.getElementById('fileInput').click()">
+        <div>📄 Click to choose file</div>
+        <p>prompt.md, .txt, .json accepted</p>
+        <div class="file-name" id="fileName"></div>
+      </div>
+      <input type="file" id="fileInput" accept=".md,.txt,.json,.text"/>
+    </div>
+    <div class="input-group">
+      <label>Or type / paste prompt directly</label>
+      <textarea id="promptText" placeholder="Enter your prompt here. Each batch will call Claude with this exact prompt."></textarea>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div class="section">
+    <div class="section-label">Controls</div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="startBtn" onclick="startJob()">▶ Start Generation</button>
+      <button class="btn btn-stop" id="stopBtn" onclick="stopJob()" disabled>■ Stop</button>
+      <button class="btn btn-download" id="dlBtn" onclick="downloadZip()" disabled>⬇ Download ZIP</button>
+      <button class="btn btn-reset" onclick="resetAll()">↺ Reset</button>
+    </div>
+
+    <!-- Progress -->
+    <div class="progress-wrap" id="progressWrap" style="display:none">
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" id="progressFill"></div>
+      </div>
+      <div class="progress-label">
+        <span id="progressText">0 / 0</span>
+        <span id="progressPct">0%</span>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-grid" id="statsGrid" style="display:none">
+      <div class="stat-card">
+        <div class="stat-val green" id="statDone">0</div>
+        <div class="stat-key">Done</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val red" id="statFailed">0</div>
+        <div class="stat-key">Failed</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val amber" id="statRetried">0</div>
+        <div class="stat-key">Retried</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val blue" id="statSpeed">—</div>
+        <div class="stat-key">Batches/min</div>
+      </div>
+    </div>
+
+    <!-- Failed indices -->
+    <div class="failed-box" id="failedBox"></div>
+  </div>
+
+  <!-- Live Log -->
+  <div class="section">
+    <div class="section-label">Live Log</div>
+    <div class="log-box" id="logBox">
+      <div class="log-empty">— waiting to start —</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+let jobId = null;
+let polling = null;
+let stopped = false;
+
+// ── File Upload ───────────────────────────────────────────────────────────────
+
+document.getElementById('fileInput').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const text = await file.text();
+  document.getElementById('promptText').value = text;
+  document.getElementById('fileName').textContent = '✓ ' + file.name;
+  document.getElementById('dropZone').classList.add('has-file');
+});
+
+// ── API Key toggle ────────────────────────────────────────────────────────────
+
+function toggleKey() {
+  const inp = document.getElementById('apiKey');
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+}
+
+// ── Start Job ─────────────────────────────────────────────────────────────────
+
+async function startJob() {
+  const apiKey = document.getElementById('apiKey').value.trim();
+  const model = document.getElementById('model').value;
+  const prompt = document.getElementById('promptText').value.trim();
+  const total = parseInt(document.getElementById('totalBatches').value) || 50;
+  const concurrency = parseInt(document.getElementById('concurrency').value) || 2;
+
+  if (!apiKey) { alert('Please enter your Anthropic API key'); return; }
+  if (!prompt) { alert('Please enter or upload a prompt'); return; }
+  if (total < 1) { alert('Batch count must be at least 1'); return; }
+
+  stopped = false;
+
+  document.getElementById('startBtn').disabled = true;
+  document.getElementById('stopBtn').disabled = false;
+  document.getElementById('dlBtn').disabled = true;
+  document.getElementById('progressWrap').style.display = '';
+  document.getElementById('statsGrid').style.display = '';
+  document.getElementById('failedBox').style.display = 'none';
+  setStatus('STARTING', '');
+
+  clearLog();
+  appendLog('info', `[${now()}] Submitting job...`);
+
+  try {
+    const res = await fetch('/api/start', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ apiKey, model, prompt, total, concurrency }),
+    });
+    const data = await res.json();
+    if (!res.ok) { alert('Error: ' + data.error); resetButtons(); return; }
+
+    jobId = data.jobId;
+    appendLog('info', `[${now()}] Job started: ${jobId}`);
+    startPolling();
+  } catch (err) {
+    alert('Server error: ' + err.message);
+    resetButtons();
+  }
+}
+
+// ── Stop ──────────────────────────────────────────────────────────────────────
+
+function stopJob() {
+  stopped = true;
+  clearInterval(polling);
+  polling = null;
+  setStatus('STOPPED', 'error');
+  document.getElementById('stopBtn').disabled = true;
+  document.getElementById('startBtn').disabled = false;
+  appendLog('err', `[${now()}] Stopped by user.`);
+}
+
+// ── Polling ───────────────────────────────────────────────────────────────────
+
+function startPolling() {
+  if (polling) clearInterval(polling);
+  polling = setInterval(pollStatus, 1500);
+}
+
+async function pollStatus() {
+  if (!jobId || stopped) return;
+
+  try {
+    const res = await fetch(`/api/status/${jobId}`);
+    if (!res.ok) return;
+    const d = await res.json();
+
+    // Update progress
+    document.getElementById('progressFill').style.width = d.progress + '%';
+    document.getElementById('progressText').textContent = `${d.done + d.failed} / ${d.total}`;
+    document.getElementById('progressPct').textContent = d.progress + '%';
+
+    // Stats
+    document.getElementById('statDone').textContent = d.done;
+    document.getElementById('statFailed').textContent = d.failed;
+    document.getElementById('statRetried').textContent = d.retried;
+    document.getElementById('statSpeed').textContent = d.batchesPerMin ?? '—';
+
+    // Logs
+    renderLogs(d.logs);
+
+    // Failed indices
+    if (d.failedIndices?.length > 0) {
+      const fb = document.getElementById('failedBox');
+      fb.style.display = '';
+      fb.textContent = 'Failed batch indices: ' + d.failedIndices.join(', ');
+    }
+
+    // Status pill
+    if (d.status === 'running' || d.status === 'starting') {
+      setStatus('RUNNING', 'running');
+    } else if (d.status === 'done') {
+      setStatus('DONE', 'done');
+      clearInterval(polling);
+      polling = null;
+      document.getElementById('startBtn').disabled = false;
+      document.getElementById('stopBtn').disabled = true;
+      if (d.hasZip) document.getElementById('dlBtn').disabled = false;
+    } else if (d.status === 'error') {
+      setStatus('ERROR', 'error');
+      clearInterval(polling);
+      polling = null;
+      resetButtons();
+    }
+  } catch (err) {
+    appendLog('err', `[${now()}] Polling error: ${err.message}`);
+  }
+}
+
+// ── Download ──────────────────────────────────────────────────────────────────
+
+function downloadZip() {
+  if (!jobId) return;
+  window.location.href = `/api/download/${jobId}`;
+}
+
+// ── Reset ─────────────────────────────────────────────────────────────────────
+
+function resetAll() {
+  if (polling) clearInterval(polling);
+  polling = null;
+  jobId = null;
+  stopped = false;
+  resetButtons();
+  setStatus('IDLE', '');
+  document.getElementById('progressFill').style.width = '0%';
+  document.getElementById('progressText').textContent = '0 / 0';
+  document.getElementById('progressPct').textContent = '0%';
+  document.getElementById('progressWrap').style.display = 'none';
+  document.getElementById('statsGrid').style.display = 'none';
+  document.getElementById('failedBox').style.display = 'none';
+  document.getElementById('statDone').textContent = '0';
+  document.getElementById('statFailed').textContent = '0';
+  document.getElementById('statRetried').textContent = '0';
+  document.getElementById('statSpeed').textContent = '—';
+  clearLog();
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function resetButtons() {
+  document.getElementById('startBtn').disabled = false;
+  document.getElementById('stopBtn').disabled = true;
+}
+
+function setStatus(label, cls) {
+  const pill = document.getElementById('statusPill');
+  pill.textContent = label;
+  pill.className = 'status-pill ' + cls;
+}
+
+let lastLogCount = 0;
+
+function renderLogs(logs) {
+  if (!logs?.length) return;
+  if (logs.length === lastLogCount) return;
+  lastLogCount = logs.length;
+
+  const box = document.getElementById('logBox');
+  box.innerHTML = '';
+  for (const line of logs) {
+    const div = document.createElement('div');
+    div.className = 'log-line ' + classifyLog(line);
+    div.textContent = line;
+    box.appendChild(div);
+  }
+  box.scrollTop = box.scrollHeight;
+}
+
+function classifyLog(line) {
+  if (line.includes('✅') || line.includes('Complete') || line.includes('Done')) return 'ok';
+  if (line.includes('❌') || line.includes('Fatal') || line.includes('Failed')) return 'err';
+  if (line.includes('⏳') || line.includes('Waiting') || line.includes('Rate limit')) return 'wait';
+  if (line.includes('🚀') || line.includes('📦') || line.includes('🎉') || line.includes('▶') || line.includes('Starting')) return 'info';
+  return '';
+}
+
+function clearLog() {
+  lastLogCount = 0;
+  document.getElementById('logBox').innerHTML = '<div class="log-empty">— waiting to start —</div>';
+}
+
+function appendLog(cls, msg) {
+  const box = document.getElementById('logBox');
+  const empty = box.querySelector('.log-empty');
+  if (empty) empty.remove();
+  const div = document.createElement('div');
+  div.className = 'log-line ' + cls;
+  div.textContent = msg;
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+}
+
+function now() {
+  return new Date().toLocaleTimeString('en-US', { hour12: false });
+}
+</script>
+</body>
+</html>
